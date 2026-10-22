@@ -143,8 +143,7 @@ void DrawRuleRow(Settings& s, size_t i, bool compact, PanelResult& out, int& mov
 
 void DrawSectionRules(Settings& s, PanelResult& out) {
     PluginUi::BeginCard("###ge_card_rules");
-    PluginUi::Heading(ICON_FA_LIST, "Effect rules");
-    PluginUi::HelpMarker(
+    PluginUi::Heading(ICON_FA_LIST, "Effect rules",
         "Each rule colours the ground effects whose type id, visuals or path contain its match text, "
         "for example ShockedGround.\n\n"
         "Rules are tried from the top and the first enabled match wins, so put specific rules above "
@@ -305,13 +304,8 @@ void DrawDiscoveryTable(Scanner& scanner, Settings& s, PanelResult& out) {
 void DrawSectionDiagnostics(PanelContext& pc, PanelResult& out) {
     Settings& s = pc.settings;
     Scanner& scanner = pc.scanner;
-    PluginUi::BeginCard("###ge_card_diag");
-    ImGui::PushStyleColor(ImGuiCol_Text, PluginUi::Colors().Accent);
-    const bool open = ImGui::TreeNodeEx(ICON_FA_BUG "  Diagnostics###ge_diag",
-                                        ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth);
-    ImGui::PopStyleColor();
-    Tip("Numbers and tools for checking what the plugin sees.\nNot needed for normal play.");
-    if (open) {
+    if (PluginUi::BeginDiagnostics("Scan counts, the path filter and a list of the ground effects around you with "
+                                   "their type ids.", "ge_diag")) {
         const ScanStats& st = scanner.Stats();
         char line[192];
         std::snprintf(line, sizeof(line), "Marked now: %d. Drawn this frame: %d (%.2f ms).",
@@ -351,8 +345,8 @@ void DrawSectionDiagnostics(PanelContext& pc, PanelResult& out) {
 
         ImGui::Spacing();
         DrawDiscoveryTable(scanner, s, out);
+        PluginUi::EndDiagnostics();
     }
-    PluginUi::EndCard();
 }
 
 } // namespace
@@ -376,6 +370,9 @@ void DrawSettingsPanel(PanelContext& pc, PanelResult& out) {
     DrawSectionPerformance(pc.settings, out);
     ImGui::Spacing();
     DrawSectionDiagnostics(pc, out);
+    ImGui::Spacing();
+    PluginUi::Hint("Originally created by 1k4ru5g3. Maintained by POEFixer.");
+    ImGui::Spacing();
 }
 
 } // namespace GroundEffects
