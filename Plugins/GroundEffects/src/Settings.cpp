@@ -2,6 +2,7 @@
 
 #include "AtomicFile.h"
 #include "TextMatch.h"
+#include "TextUtil.h"
 
 #include <nlohmann/json.hpp>
 
@@ -23,11 +24,7 @@ constexpr const char* kLegacyIniName = "GroundEffects.ini";
 float Clamp01(float v) { return std::clamp(v, 0.0f, 1.0f); }
 
 std::string Truncate(std::string s, size_t maxLen) {
-    if (s.size() <= maxLen) return s;
-    size_t cut = maxLen;
-    // never split a UTF-8 sequence
-    while (cut > 0 && (static_cast<unsigned char>(s[cut]) & 0xC0) == 0x80) --cut;
-    s.resize(cut);
+    Utf8Truncate(s, maxLen);  // never split a UTF-8 sequence
     return s;
 }
 
@@ -147,10 +144,10 @@ void Settings::Clamp() {
 
 std::vector<Rule> DefaultRules() {
     return {
-        MakeRule("Shocked Ground", "ShockedGround", Color4{ 0.45f, 0.65f, 1.00f, 0.38f }),
-        MakeRule("Chilled Ground", "ChilledGround", Color4{ 0.35f, 0.80f, 1.00f, 0.34f }),
-        MakeRule("Ignited Ground", "IgnitedGround", Color4{ 1.00f, 0.22f, 0.08f, 0.40f }),
-        MakeRule("Caustic Cloud",  "CausticCloud",  Color4{ 0.35f, 1.00f, 0.20f, 0.34f }),
+        MakeRule(kShockedGroundLabel, "ShockedGround", Color4{ 0.45f, 0.65f, 1.00f, 0.38f }),
+        MakeRule(kChilledGroundLabel, "ChilledGround", Color4{ 0.35f, 0.80f, 1.00f, 0.34f }),
+        MakeRule(kIgnitedGroundLabel, "IgnitedGround", Color4{ 1.00f, 0.22f, 0.08f, 0.40f }),
+        MakeRule(kCausticCloudLabel,  "CausticCloud",  Color4{ 0.35f, 1.00f, 0.20f, 0.34f }),
     };
 }
 

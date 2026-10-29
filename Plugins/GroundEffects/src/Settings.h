@@ -60,6 +60,13 @@ struct Settings {
     void Clamp();
 };
 
+// The default rules' names, stored in English: the settings tab and the overlay show them in the
+// program language while a rule still has one of them (display only; matching uses the match text).
+inline constexpr const char* kShockedGroundLabel = "Shocked Ground";
+inline constexpr const char* kChilledGroundLabel = "Chilled Ground";
+inline constexpr const char* kIgnitedGroundLabel = "Ignited Ground";
+inline constexpr const char* kCausticCloudLabel = "Caustic Cloud";
+
 std::vector<Rule> DefaultRules();
 Settings DefaultSettings();
 

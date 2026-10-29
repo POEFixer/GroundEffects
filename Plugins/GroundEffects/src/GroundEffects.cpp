@@ -11,6 +11,9 @@
 #include <windows.h>
 
 #include "../../../POEFixer/plugin_sdk/PluginSDK.h"
+// Texts follow the program language (PluginI18n.h): lang/<code>.json next to the DLL, English
+// compiled in through lang_en.generated.h (python tools/plugin_i18n/gen.py Plugins/GroundEffects).
+#include "lang_en.generated.h"   // once per DLL, after PluginSDK.h
 #include "../../../POEFixer/imgui/imgui.h"
 #include "../../../POEFixer/imgui/imgui_internal.h"   // ImTextInitClassifiers
 
@@ -27,7 +30,7 @@
 POEFIXER_PLUGIN_INFO(
     "GroundEffects",
     "Ground Effects",
-    "1.0.3",
+    "1.0.4",
     "1k4ru5g3, POEFixer",
     "Draws coloured circles on dangerous ground effects (shocked, chilled, ignited ground, caustic clouds and your own rules) at their real size.")
 

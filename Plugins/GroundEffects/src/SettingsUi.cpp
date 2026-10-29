@@ -1,11 +1,13 @@
 #include "SettingsUi.h"
 
+#include "Text.h"
+
 #include "../../../POEFixer/plugin_sdk/PluginUi.h"
 #include "../../../POEFixer/imgui/IconsFontAwesome6.h"
 
 #include <algorithm>
 #include <cmath>
-#include <cstdio>
+#include <string>
 
 namespace GroundEffects {
 
@@ -30,64 +32,68 @@ ImVec4 ToVec4(const Color4& c) { return ImVec4(c.r, c.g, c.b, c.a); }
 
 void DrawSectionDisplay(Settings& s, PanelResult& out) {
     PluginUi::BeginCard("###ge_card_display");
-    PluginUi::Heading(ICON_FA_PALETTE, "Display");
+    PluginUi::Heading(ICON_FA_PALETTE, I18n::Tr("display_heading"));
 
-    out.changed |= PluginUi::Check("Fill circles", "ge_fill", &s.fillCircles,
-        "Paint the inside of each circle with the rule colour.\n"
-        "Turn it off to see only the outline.");
-    SameLineIfFitsCheckbox("Show names");
-    out.changed |= PluginUi::Check("Show names", "ge_labels", &s.showLabels,
-        "Write the rule name beside each circle (the effect's type id when the rule has no name).");
+    out.changed |= PluginUi::Check(I18n::Tr("display_fill"), "ge_fill", &s.fillCircles, I18n::Tr("display_fill_tip"));
+    const char* showNames = I18n::Tr("display_show_names");
+    SameLineIfFitsCheckbox(showNames);
+    out.changed |= PluginUi::Check(showNames, "ge_labels", &s.showLabels, I18n::Tr("display_show_names_tip"));
 
     ImGui::Spacing();
-    const PluginUi::LabelColumn col{ "Outline width", "Opacity", "Smoothness", "Height offset" };
+    const char* outline = I18n::Tr("display_outline_width");
+    const char* opacity = I18n::Tr("display_opacity");
+    const char* smoothness = I18n::Tr("display_smoothness");
+    const char* height = I18n::Tr("display_height_offset");
+    const PluginUi::LabelColumn col{ outline, opacity, smoothness, height };
 
-    out.changed |= PluginUi::SliderFloatRow(col, "Outline width", "###ge_outline", &s.outlineThickness,
-        Limits::kOutlineMin, Limits::kOutlineMax, "%.1f px",
-        "Thickness of the circle outline.\n"
-        "A thin dark edge is drawn under it so it stays visible on bright ground.");
+    out.changed |= PluginUi::SliderFloatRow(col, outline, "###ge_outline", &s.outlineThickness,
+        Limits::kOutlineMin, Limits::kOutlineMax, UnitFormat(I18n::Tr("unit_pixels"), "%.1f").c_str(),
+        I18n::Tr("display_outline_width_tip"));
 
-    col.Row("Opacity");
+    col.Row(opacity);
     int pct = static_cast<int>(std::lround(s.opacity * 100.0f));
     if (ImGui::SliderInt("###ge_opacity", &pct, 10, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
         s.opacity = static_cast<float>(pct) / 100.0f;
         out.changed = true;
     }
-    Tip("Fades every circle and name together.\n"
-        "Each rule's own colour keeps its transparency on top of this.");
+    Tip(I18n::Tr("display_opacity_tip"));
 
-    out.changed |= PluginUi::SliderIntRow(col, "Smoothness", "###ge_segments", &s.circleSegments,
-        Limits::kSegmentsMin, Limits::kSegmentsMax, "%d points",
-        "Points per circle.\n"
-        "More points look rounder and cost a little more time each frame.");
+    out.changed |= PluginUi::SliderIntRow(col, smoothness, "###ge_segments", &s.circleSegments,
+        Limits::kSegmentsMin, Limits::kSegmentsMax, UnitFormat(I18n::Tr("unit_points"), "%d").c_str(),
+        I18n::Tr("display_smoothness_tip"));
 
-    out.changed |= PluginUi::SliderFloatRow(col, "Height offset", "###ge_height", &s.heightOffset,
-        Limits::kHeightMin, Limits::kHeightMax, "%.0f",
-        "Moves every circle up or down in the world (negative values lift it).\n"
-        "Leave it at 0 unless circles float above or sink into the ground.");
+    out.changed |= PluginUi::SliderFloatRow(col, height, "###ge_height", &s.heightOffset,
+        Limits::kHeightMin, Limits::kHeightMax, "%.0f", I18n::Tr("display_height_offset_tip"));
     if (s.heightOffset != 0.0f) {
         ImGui::SameLine();
         if (PluginUi::SubtleButton(ICON_FA_ROTATE_LEFT "###ge_height_reset")) { s.heightOffset = 0.0f; out.changed = true; }
-        Tip("Back to 0.");
+        Tip(I18n::Tr("display_height_reset_tip"));
     }
     PluginUi::EndCard();
 }
 
 void DrawSectionVisibility(Settings& s, PanelResult& out) {
     PluginUi::BeginCard("###ge_card_when");
-    PluginUi::Heading(ICON_FA_EYE, "When to show");
+    PluginUi::Heading(ICON_FA_EYE, I18n::Tr("visibility_heading"));
 
-    out.changed |= PluginUi::Check("Only hostile effects", "ge_hostile", &s.onlyHostile,
-        "Skip ground effects your side created (your own and your allies' skills).\n"
-        "Effects whose side cannot be read are skipped too.");
-    out.changed |= PluginUi::Check("Hide in towns and hideouts", "ge_town", &s.skipTownHideout,
-        "Draw nothing in towns and hideouts, where ground effects are harmless.");
-    out.changed |= PluginUi::Check("Only while the game window is active", "ge_fg", &s.onlyWhenForeground,
-        "Hide the circles while another window (a browser, the desktop) is in front of the game.");
-    out.changed |= PluginUi::Check("Hide while the POEFixer menu is open", "ge_menu", &s.hideWhenMenuVisible,
-        "Hide the circles while the POEFixer menu is shown.\n"
-        "Leave it off to see colour changes live while you edit the rules.");
+    out.changed |= PluginUi::Check(I18n::Tr("visibility_hostile"), "ge_hostile", &s.onlyHostile,
+        I18n::Tr("visibility_hostile_tip"));
+    out.changed |= PluginUi::Check(I18n::Tr("visibility_town"), "ge_town", &s.skipTownHideout,
+        I18n::Tr("visibility_town_tip"));
+    out.changed |= PluginUi::Check(I18n::Tr("visibility_foreground"), "ge_fg", &s.onlyWhenForeground,
+        I18n::Tr("visibility_foreground_tip"));
+    out.changed |= PluginUi::Check(I18n::Tr("visibility_hide_menu"), "ge_menu", &s.hideWhenMenuVisible,
+        I18n::Tr("visibility_hide_menu_tip"));
     PluginUi::EndCard();
+}
+
+// The rule's name field. A default rule's stored English name is shown in the program
+// language (display only); typing that shown name back stores the English name again.
+bool RuleLabelField(Rule& r) {
+    std::string shown = ShownRuleLabel(r.label);
+    if (!PluginUi::InputString("###label", I18n::Tr("rules_name_hint"), shown)) return false;
+    r.label = StoredRuleLabel(shown);
+    return true;
 }
 
 void DrawRuleRow(Settings& s, size_t i, bool compact, PanelResult& out, int& moveFrom, int& moveTo, int& removeAt) {
@@ -98,7 +104,7 @@ void DrawRuleRow(Settings& s, size_t i, bool compact, PanelResult& out, int& mov
 
     ImGui::TableNextColumn();
     if (ImGui::Checkbox("###on", &r.enabled)) { out.changed = true; out.rulesChanged = true; }
-    Tip("Use this rule. A switched-off rule keeps its settings.");
+    Tip(I18n::Tr("rules_on_tip"));
 
     ImGui::TableNextColumn();
     ImVec4 c = ToVec4(r.color);
@@ -106,72 +112,65 @@ void DrawRuleRow(Settings& s, size_t i, bool compact, PanelResult& out, int& mov
         r.color = Color4{ c.x, c.y, c.z, c.w };
         out.changed = true;
     }
-    Tip("Circle colour.\nIts transparency is the fill strength; the outline is drawn stronger.");
+    Tip(I18n::Tr("rules_colour_tip"));
 
     ImGui::BeginDisabled(!r.enabled);
     ImGui::TableNextColumn();
     ImGui::SetNextItemWidth(-FLT_MIN);
-    out.changed |= PluginUi::InputString("###label", "Name", r.label);
-    if (ImGui::IsItemDeactivatedAfterEdit() && r.label.size() > Limits::kMaxLabelLen) r.label.resize(Limits::kMaxLabelLen);
-    Tip("Name shown beside the circle when \"Show names\" is on.");
+    out.changed |= RuleLabelField(r);
+    if (ImGui::IsItemDeactivatedAfterEdit()) Utf8Truncate(r.label, Limits::kMaxLabelLen);
+    Tip(I18n::TrF("rules_name_tip", { { "option", I18n::Tr("display_show_names") } }).c_str());
 
     if (!compact) ImGui::TableNextColumn();
     ImGui::SetNextItemWidth(-FLT_MIN);
-    if (PluginUi::InputString("###match", "e.g. ShockedGround", r.match)) { out.changed = true; out.rulesChanged = true; }
-    if (ImGui::IsItemDeactivatedAfterEdit() && r.match.size() > Limits::kMaxMatchLen) r.match.resize(Limits::kMaxMatchLen);
-    Tip("Text to look for in the effect's type id, visuals and path (not case-sensitive).\n"
-        "Example: ShockedGround, IgnitedGround, CausticCloud.");
+    if (PluginUi::InputString("###match", I18n::Tr("rules_match_hint"), r.match)) { out.changed = true; out.rulesChanged = true; }
+    if (ImGui::IsItemDeactivatedAfterEdit()) Utf8Truncate(r.match, Limits::kMaxMatchLen);
+    Tip(I18n::Tr("rules_match_tip"));
     ImGui::EndDisabled();
 
     ImGui::TableNextColumn();
     const ImVec2 btn(fh, fh);
     ImGui::BeginDisabled(i == 0);
     if (PluginUi::SubtleButton(ICON_FA_ARROW_UP "###up", btn)) { moveFrom = static_cast<int>(i); moveTo = moveFrom - 1; }
-    Tip("Move up.\nRules are tried from the top; the first match wins.");
+    Tip(I18n::Tr("rules_up_tip"));
     ImGui::EndDisabled();
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
     ImGui::BeginDisabled(i + 1 >= s.rules.size());
     if (PluginUi::SubtleButton(ICON_FA_ARROW_DOWN "###down", btn)) { moveFrom = static_cast<int>(i); moveTo = moveFrom + 1; }
-    Tip("Move down.");
+    Tip(I18n::Tr("rules_down_tip"));
     ImGui::EndDisabled();
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
     if (PluginUi::SubtleButton(ICON_FA_TRASH "###del", btn)) removeAt = static_cast<int>(i);
-    Tip("Delete this rule.");
+    Tip(I18n::Tr("rules_delete_tip"));
 
     ImGui::PopID();
 }
 
 void DrawSectionRules(Settings& s, PanelResult& out) {
     PluginUi::BeginCard("###ge_card_rules");
-    PluginUi::Heading(ICON_FA_LIST, "Effect rules",
-        "Each rule colours the ground effects whose type id, visuals or path contain its match text, "
-        "for example ShockedGround.\n\n"
-        "Rules are tried from the top and the first enabled match wins, so put specific rules above "
-        "general ones.\n\n"
-        "To find the type id of an effect you see in game, open Diagnostics below and turn on "
-        "\"Discover effects\".");
+    const std::string help = I18n::TrF("rules_help", { { "option", I18n::Tr("diag_discover") } });
+    PluginUi::Heading(ICON_FA_LIST, I18n::Tr("rules_heading"), help.c_str());
 
     int moveFrom = -1, moveTo = -1, removeAt = -1;
     if (s.rules.empty()) {
-        PluginUi::Hint("No rules: nothing is marked. Add a rule or restore the defaults.");
+        PluginUi::Hint(I18n::Tr("rules_none"));
     } else {
         const ImGuiStyle& st = ImGui::GetStyle();
         const float fh = ImGui::GetFrameHeight();
         const float actionsW = fh * 3.0f + st.ItemInnerSpacing.x * 2.0f;
-        const float onW = std::max(fh, ImGui::CalcTextSize("On").x);
-        const float colorW = std::max(fh, ImGui::CalcTextSize("Colour").x);
+        // Not resizable: the fixed columns (width 0) fit their translated header and cells every frame.
         const ImGuiTableFlags flags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg |
                                       ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_PadOuterX;
         // On a narrow pane the name and the match text share one column, one above the other.
         const bool compact = ImGui::GetContentRegionAvail().x < ImGui::GetFontSize() * 30.0f;
         if (ImGui::BeginTable("###ge_rules", compact ? 4 : 5, flags)) {
-            ImGui::TableSetupColumn("On", ImGuiTableColumnFlags_WidthFixed, onW);
-            ImGui::TableSetupColumn("Colour", ImGuiTableColumnFlags_WidthFixed, colorW);
+            ImGui::TableSetupColumn(I18n::TrId("rules_col_on"), ImGuiTableColumnFlags_WidthFixed, 0.0f);
+            ImGui::TableSetupColumn(I18n::TrId("rules_col_colour"), ImGuiTableColumnFlags_WidthFixed, 0.0f);
             if (compact) {
-                ImGui::TableSetupColumn("Name / match text", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+                ImGui::TableSetupColumn(I18n::TrId("rules_col_name_match"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
             } else {
-                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-                ImGui::TableSetupColumn("Match text", ImGuiTableColumnFlags_WidthStretch, 1.3f);
+                ImGui::TableSetupColumn(I18n::TrId("rules_col_name"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
+                ImGui::TableSetupColumn(I18n::TrId("rules_col_match"), ImGuiTableColumnFlags_WidthStretch, 1.3f);
             }
             ImGui::TableSetupColumn("###actions", ImGuiTableColumnFlags_WidthFixed, actionsW);
             ImGui::TableHeadersRow();
@@ -190,23 +189,22 @@ void DrawSectionRules(Settings& s, PanelResult& out) {
     }
 
     ImGui::Spacing();
-    const char* addLabel = ICON_FA_PLUS "  Add rule###ge_add";
-    const char* resetLabel = ICON_FA_ROTATE_LEFT "  Restore default rules###ge_reset";
+    const std::string addLabel = std::string(ICON_FA_PLUS "  ") + I18n::Tr("rules_add") + "###ge_add";
+    const std::string resetLabel = std::string(ICON_FA_ROTATE_LEFT "  ") + I18n::Tr("rules_restore") + "###ge_reset";
     ImGui::BeginDisabled(s.rules.size() >= Limits::kMaxRules);
-    if (ImGui::Button(addLabel)) {
+    if (ImGui::Button(addLabel.c_str())) {
         Rule r;
-        r.label = "New rule";
+        r.label = I18n::Tr("rules_new_rule");   // the user's own name from now on, in the language of the moment
         s.rules.push_back(r);
         out.changed = out.rulesChanged = true;
     }
     ImGui::EndDisabled();
-    Tip("Add an empty rule at the bottom.\nType a match text to make it work.");
-    SameLineIfFitsWidth(PluginUi::ButtonWidth(resetLabel));
-    if (PluginUi::SubtleButton(resetLabel)) ImGui::OpenPopup("###ge_reset_confirm");
-    Tip("Replace all rules with the four default ones\n(shocked, chilled and ignited ground, caustic clouds).");
-    if (PluginUi::ConfirmPopup("###ge_reset_confirm",
-                               "Replace all rules with the four default rules? Your own rules are removed.",
-                               "Replace", "Cancel")) {
+    Tip(I18n::Tr("rules_add_tip"));
+    SameLineIfFitsWidth(PluginUi::ButtonWidth(resetLabel.c_str()));
+    if (PluginUi::SubtleButton(resetLabel.c_str())) ImGui::OpenPopup("###ge_reset_confirm");
+    Tip(I18n::Tr("rules_restore_tip"));
+    if (PluginUi::ConfirmPopup("###ge_reset_confirm", I18n::Tr("rules_restore_confirm"), I18n::Tr("rules_replace"),
+                               nullptr)) {
         s.rules = DefaultRules();
         out.changed = out.rulesChanged = true;
     }
@@ -215,45 +213,47 @@ void DrawSectionRules(Settings& s, PanelResult& out) {
 
 void DrawSectionPerformance(Settings& s, PanelResult& out) {
     PluginUi::BeginCard("###ge_card_perf");
-    PluginUi::Heading(ICON_FA_GAUGE, "Performance");
-    const PluginUi::LabelColumn col{ "Look for new effects every", "Scan time per frame", "Most circles at once" };
+    PluginUi::Heading(ICON_FA_GAUGE, I18n::Tr("perf_heading"));
+    const char* interval = I18n::Tr("perf_interval");
+    const char* budget = I18n::Tr("perf_budget");
+    const char* maxMarkers = I18n::Tr("perf_max_circles");
+    const PluginUi::LabelColumn col{ interval, budget, maxMarkers };
 
-    out.changed |= PluginUi::SliderIntRow(col, "Look for new effects every", "###ge_interval", &s.scanIntervalMs,
-        Limits::kScanIntervalMin, Limits::kScanIntervalMax, "%d ms",
-        "How often the plugin looks for ground effects that appeared.\n"
-        "Circles already shown follow the camera every frame either way.");
+    out.changed |= PluginUi::SliderIntRow(col, interval, "###ge_interval", &s.scanIntervalMs,
+        Limits::kScanIntervalMin, Limits::kScanIntervalMax, UnitFormat(I18n::Tr("unit_ms"), "%d").c_str(),
+        I18n::Tr("perf_interval_tip"));
 
-    out.changed |= PluginUi::SliderIntRow(col, "Scan time per frame", "###ge_budget", &s.scanBudgetMs,
-        Limits::kScanBudgetMin, Limits::kScanBudgetMax, "%d ms",
-        "The most time one frame may spend looking.\n"
-        "A longer search continues in the next frames, so the game never stutters.\n"
-        "A scan normally needs far less than 1 ms.");
+    out.changed |= PluginUi::SliderIntRow(col, budget, "###ge_budget", &s.scanBudgetMs,
+        Limits::kScanBudgetMin, Limits::kScanBudgetMax, UnitFormat(I18n::Tr("unit_ms"), "%d").c_str(),
+        I18n::Tr("perf_budget_tip"));
 
-    out.changed |= PluginUi::SliderIntRow(col, "Most circles at once", "###ge_max", &s.maxMarkers,
-        Limits::kMaxMarkersMin, Limits::kMaxMarkersMax, "%d",
-        "Upper limit of circles drawn at the same time.");
+    out.changed |= PluginUi::SliderIntRow(col, maxMarkers, "###ge_max", &s.maxMarkers,
+        Limits::kMaxMarkersMin, Limits::kMaxMarkersMax, "%d", I18n::Tr("perf_max_circles_tip"));
     PluginUi::EndCard();
 }
 
 void DrawDiscoveryTable(Scanner& scanner, Settings& s, PanelResult& out) {
     const auto& rows = scanner.DiscoveryRows();
     if (rows.empty()) {
-        PluginUi::Hint(scanner.Discovery() ? "Nothing seen yet. Walk near a ground effect in a map."
-                                           : "Turn on \"Discover effects\" to list the ground effects around you.");
+        if (scanner.Discovery())
+            PluginUi::Hint(I18n::Tr("discovery_nothing_yet"));
+        else
+            PluginUi::Hint(I18n::TrF("discovery_turn_on", { { "option", I18n::Tr("diag_discover") } }).c_str());
         return;
     }
     const float fh = ImGui::GetFrameHeight();
     const float rowH = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().CellPadding.y * 2.0f;
     const int visibleRows = std::min<int>(static_cast<int>(rows.size()), 10) + 1;
+    // Not resizable: the fixed columns (width 0) fit their translated header and cells every frame.
     const ImGuiTableFlags flags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
                                   ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_PadOuterX;
     const float actionsW = fh * 2.0f + ImGui::GetStyle().ItemInnerSpacing.x;
     if (!ImGui::BeginTable("###ge_discovery", 5, flags, ImVec2(0.0f, rowH * static_cast<float>(visibleRows)))) return;
     ImGui::TableSetupScrollFreeze(0, 1);
-    ImGui::TableSetupColumn("Type id", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-    ImGui::TableSetupColumn("Radius", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("Radius").x);
-    ImGui::TableSetupColumn("Side", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("Friendly").x);
-    ImGui::TableSetupColumn("Seen", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("0000").x);
+    ImGui::TableSetupColumn(I18n::TrId("discovery_col_type"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    ImGui::TableSetupColumn(I18n::TrId("discovery_col_radius"), ImGuiTableColumnFlags_WidthFixed, 0.0f);
+    ImGui::TableSetupColumn(I18n::TrId("discovery_col_side"), ImGuiTableColumnFlags_WidthFixed, 0.0f);
+    ImGui::TableSetupColumn(I18n::TrId("discovery_col_seen"), ImGuiTableColumnFlags_WidthFixed, 0.0f);
     ImGui::TableSetupColumn("###act", ImGuiTableColumnFlags_WidthFixed, actionsW);
     ImGui::TableHeadersRow();
 
@@ -263,28 +263,31 @@ void DrawDiscoveryTable(Scanner& scanner, Settings& s, PanelResult& out) {
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted(r.typeId.empty() ? "(no type id)" : r.typeId.c_str());
+        ImGui::TextUnformatted(r.typeId.empty() ? I18n::Tr("discovery_no_type_id") : r.typeId.c_str());
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
+            const auto orDash = [](const std::string& v) { return v.empty() ? std::string("-") : v; };
             ImGui::BeginTooltip();
             ImGui::PushTextWrapPos(ImGui::GetFontSize() * 34.0f);
-            ImGui::Text("End: %s", r.endEffect.empty() ? "-" : r.endEffect.c_str());
-            ImGui::Text("Visual 1: %s", r.buffVisual1.empty() ? "-" : r.buffVisual1.c_str());
-            ImGui::Text("Visual 2: %s", r.buffVisual2.empty() ? "-" : r.buffVisual2.c_str());
-            ImGui::Text("Model: %s", r.aoFile.empty() ? "-" : r.aoFile.c_str());
-            ImGui::Text("Path: %s", r.path.c_str());
+            ImGui::TextUnformatted(I18n::TrF("discovery_end", { { "value", orDash(r.endEffect) } }).c_str());
+            ImGui::TextUnformatted(I18n::TrF("discovery_visual_1", { { "value", orDash(r.buffVisual1) } }).c_str());
+            ImGui::TextUnformatted(I18n::TrF("discovery_visual_2", { { "value", orDash(r.buffVisual2) } }).c_str());
+            ImGui::TextUnformatted(I18n::TrF("discovery_model", { { "value", orDash(r.aoFile) } }).c_str());
+            ImGui::TextUnformatted(I18n::TrF("discovery_path", { { "value", r.path } }).c_str());
             ImGui::PopTextWrapPos();
             ImGui::EndTooltip();
         }
         ImGui::TableNextColumn();
         ImGui::Text("%.0f", r.radius);
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted(r.positionedValid ? (r.friendly ? "Friendly" : "Hostile") : "Unknown");
+        ImGui::TextUnformatted(!r.positionedValid ? I18n::Tr("discovery_side_unknown")
+                               : r.friendly        ? I18n::Tr("discovery_side_friendly")
+                                                   : I18n::Tr("discovery_side_hostile"));
         ImGui::TableNextColumn();
         ImGui::Text("%d", r.seen);
         ImGui::TableNextColumn();
         if (PluginUi::SubtleButton(ICON_FA_COPY "###copy", ImVec2(fh, fh)))
             ImGui::SetClipboardText(r.typeId.c_str());
-        Tip("Copy the type id.");
+        Tip(I18n::Tr("discovery_copy_tip"));
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         ImGui::BeginDisabled(r.typeId.empty() || s.rules.size() >= Limits::kMaxRules);
         if (PluginUi::SubtleButton(ICON_FA_PLUS "###addrule", ImVec2(fh, fh))) {
@@ -294,7 +297,7 @@ void DrawDiscoveryTable(Scanner& scanner, Settings& s, PanelResult& out) {
             s.rules.push_back(rule);
             out.changed = out.rulesChanged = true;
         }
-        Tip("Add a rule for this type id at the bottom of the rule list.");
+        Tip(I18n::Tr("discovery_add_rule_tip"));
         ImGui::EndDisabled();
         ImGui::PopID();
     }
@@ -304,44 +307,39 @@ void DrawDiscoveryTable(Scanner& scanner, Settings& s, PanelResult& out) {
 void DrawSectionDiagnostics(PanelContext& pc, PanelResult& out) {
     Settings& s = pc.settings;
     Scanner& scanner = pc.scanner;
-    if (PluginUi::BeginDiagnostics("Scan counts, the path filter and a list of the ground effects around you with "
-                                   "their type ids.", "ge_diag")) {
+    if (PluginUi::BeginDiagnostics(I18n::Tr("diag_tip"), "ge_diag")) {
         const ScanStats& st = scanner.Stats();
-        char line[192];
-        std::snprintf(line, sizeof(line), "Marked now: %d. Drawn this frame: %d (%.2f ms).",
-                      static_cast<int>(scanner.Markers().size()), pc.overlay.drawn, pc.overlay.lastFrameUs / 1000.0);
-        PluginUi::Hint(line);
-        std::snprintf(line, sizeof(line), "Last scan: %d entities, %d component reads, %.2f ms over %d frame(s).",
-                      static_cast<int>(st.lastPassEntities), st.componentReads, st.lastPassMs, st.lastPassFrames);
-        PluginUi::Hint(line);
-        std::snprintf(line, sizeof(line), "Entities remembered in this area: %d.", static_cast<int>(st.knownEntities));
-        PluginUi::Hint(line);
+        PluginUi::Hint(I18n::TrF("diag_marked_now", {
+            { "marked", Num("%d", static_cast<int>(scanner.Markers().size())) },
+            { "drawn", Num("%d", pc.overlay.drawn) },
+            { "ms", Num("%.2f", pc.overlay.lastFrameUs / 1000.0) } }).c_str());
+        PluginUi::Hint(I18n::TrF("diag_last_scan", {
+            { "entities", Num("%d", static_cast<int>(st.lastPassEntities)) },
+            { "reads", Num("%d", st.componentReads) },
+            { "ms", Num("%.2f", st.lastPassMs) },
+            { "frames", Num("%d", st.lastPassFrames) } }).c_str());
+        PluginUi::Hint(I18n::TrF("diag_remembered", { { "count", Num("%d", static_cast<int>(st.knownEntities)) } }).c_str());
         ImGui::Spacing();
 
-        if (PluginUi::Check("Fast path filter", "ge_prefilter", &s.usePathPrefilter,
-                            "Read only entities whose metadata path looks like a ground effect.\n"
-                            "Turn it off only if an effect you see in game never shows up in the discovery list.")) {
+        if (PluginUi::Check(I18n::Tr("diag_prefilter"), "ge_prefilter", &s.usePathPrefilter, I18n::Tr("diag_prefilter_tip"))) {
             out.changed = true;
             scanner.Reset();
         }
 
         bool discovery = scanner.Discovery();
-        if (PluginUi::Check("Discover effects", "ge_discover", &discovery,
-                            "List every kind of ground effect near you this session, with its type id.\n"
-                            "Use it to write rules for effects the defaults do not cover.\n"
-                            "Not saved: it is off again next time."))
+        if (PluginUi::Check(I18n::Tr("diag_discover"), "ge_discover", &discovery, I18n::Tr("diag_discover_tip")))
             scanner.SetDiscovery(discovery);
-        SameLineIfFitsCheckbox("Write a log file");
+        const char* writeLog = I18n::Tr("diag_write_log");
+        SameLineIfFitsCheckbox(writeLog);
         ImGui::BeginDisabled(!discovery);
         bool log = scanner.DiscoveryLog();
-        if (PluginUi::Check("Write a log file", "ge_log", &log,
-                            "Append each newly seen kind once to\n"
-                            "config/GroundEffectsDiscovery.log in the plugin folder."))
+        if (PluginUi::Check(writeLog, "ge_log", &log, I18n::Tr("diag_write_log_tip")))
             scanner.SetDiscoveryLog(log, pc.discoveryLogFile);
         ImGui::EndDisabled();
-        SameLineIfFitsWidth(PluginUi::ButtonWidth("Clear list###ge_disc_clear"));
-        if (PluginUi::SubtleButton("Clear list###ge_disc_clear")) scanner.ClearDiscovery();
-        Tip("Empty the discovery list.\nEffects still around are listed again.");
+        const char* clearLabel = I18n::TrId("diag_clear_list");
+        SameLineIfFitsWidth(PluginUi::ButtonWidth(clearLabel));
+        if (PluginUi::SubtleButton(clearLabel)) scanner.ClearDiscovery();
+        Tip(I18n::Tr("diag_clear_list_tip"));
 
         ImGui::Spacing();
         DrawDiscoveryTable(scanner, s, out);
@@ -355,8 +353,7 @@ void DrawSettingsPanel(PanelContext& pc, PanelResult& out) {
     if (!pc.hostCompatible) {
         ImGui::PushStyleColor(ImGuiCol_Text, PluginUi::Colors().Warning);
         ImGui::PushTextWrapPos(0.0f);
-        ImGui::TextUnformatted("This POEFixer version is too old for Ground Effects: nothing is drawn. "
-                               "Update POEFixer to use the plugin.");
+        ImGui::TextUnformatted(I18n::Tr("host_too_old"));
         ImGui::PopTextWrapPos();
         ImGui::PopStyleColor();
         ImGui::Spacing();

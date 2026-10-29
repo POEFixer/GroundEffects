@@ -1,5 +1,7 @@
 #include "Overlay.h"
 
+#include "Text.h"
+
 #include "../../../POEFixer/plugin_sdk/PluginUi.h"
 
 #include <algorithm>
@@ -113,9 +115,9 @@ void DrawOverlay(const PluginSDK::Context& ctx, const Settings& s, const std::ve
         }
 
         if (s.showLabels && labelCount < kMaxLabels) {
-            const std::string& text = rule.label.empty() ? m.typeId : rule.label;
-            if (text.empty()) continue;
-            const ImVec2 size = ImGui::CalcTextSize(text.c_str());
+            const char* text = rule.label.empty() ? m.typeId.c_str() : ShownRuleLabel(rule.label);
+            if (!text[0]) continue;
+            const ImVec2 size = ImGui::CalcTextSize(text);
             ImVec2 pos(maxX + fontSize * 0.35f, sumY / static_cast<float>(visible) - size.y * 0.5f);
             ImVec4 rect(pos.x, pos.y, pos.x + size.x, pos.y + size.y);
             bool placed = false;
@@ -131,7 +133,7 @@ void DrawOverlay(const PluginSDK::Context& ctx, const Settings& s, const std::ve
             }
             if (!placed) continue;
             labelRects[static_cast<size_t>(labelCount++)] = rect;
-            PluginUi::TextOutlined(dl, nullptr, fontSize, pos, ToU32(rule.color, opacity), text.c_str());
+            PluginUi::TextOutlined(dl, nullptr, fontSize, pos, ToU32(rule.color, opacity), text);
         }
     }
     stats.lastFrameUs = std::chrono::duration<double, std::micro>(std::chrono::steady_clock::now() - t0).count();
