@@ -30,7 +30,7 @@
 POEFIXER_PLUGIN_INFO(
     "GroundEffects",
     "Ground Effects",
-    "1.0.4",
+    "1.0.5",
     "1k4ru5g3, POEFixer",
     "Draws coloured circles on dangerous ground effects (shocked, chilled, ignited ground, caustic clouds and your own rules) at their real size.")
 
